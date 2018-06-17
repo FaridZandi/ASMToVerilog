@@ -73,14 +73,19 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
                       << QPointF(-100, 0);
             break;
         case Step:
-            myPolygon << QPointF(-100, -100) << QPointF(100, -100)
-                      << QPointF(100, 100) << QPointF(-100, 100)
-                      << QPointF(-100, -100);
+            myPolygon << QPointF(-100, -50) << QPointF(100, -50)
+                      << QPointF(100, 50) << QPointF(-100, 50)
+                      << QPointF(-100, -50);
             break;
         default:
-            myPolygon << QPointF(-120, -80) << QPointF(-70, 80)
-                      << QPointF(120, 80) << QPointF(70, -80)
-                      << QPointF(-120, -80);
+            path.moveTo(75, 25);
+            path.arcTo(25, -25, 50, 50, 0, 90);
+            path.arcTo(-75, -25, 50, 50, 90, 90);
+            path.arcTo(-75, 25, 50, 50, 180, 90);
+            path.arcTo(25, 25, 50, 50, 270, 90);
+            path.lineTo(75, 0);
+            myPolygon = path.toFillPolygon();
+            break;
             break;
     }
     setPolygon(myPolygon);
