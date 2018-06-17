@@ -65,6 +65,9 @@ public:
     enum DiagramType { Step, Conditional, StartEnd, Io };
 
     DiagramItem(DiagramType diagramType, QMenu *contextMenu, QGraphicsItem *parent = 0);
+
+    virtual ~DiagramItem();
+
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     void removeArrow(Arrow *arrow);
     void removeArrows();
@@ -80,7 +83,7 @@ protected:
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     
     void dragMoveEvent(QGraphicsSceneDragDropEvent *event);
-
+    void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 
 private:
     DiagramType myDiagramType;
@@ -89,7 +92,7 @@ private:
     QList<Arrow *> arrows;
     DiagramTextItem *textItem;
 
-
+    void setTextItemPosition();
 
 };
 

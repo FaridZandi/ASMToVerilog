@@ -94,6 +94,11 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
 }
 
+DiagramItem::~DiagramItem()
+{
+    delete textItem;
+}
+
 void DiagramItem::removeArrow(Arrow *arrow)
 {
     int index = arrows.indexOf(arrow);
@@ -151,19 +156,22 @@ void DiagramItem::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
 {
 }
 
-void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+void DiagramItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
-    if(textItem == NULL)
-    {
-        textItem = new DiagramTextItem("Text");
-        textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
-        textItem->setZValue(1000.0);
+    if(textItem){
+        setTextItemPosition();
+    }
 
+    QGraphicsItem::mouseMoveEvent(event);
+}
+
+void DiagramItem::setTextItemPosition()
+{
         switch(myDiagramType){
         case Io:{
             auto this_pos = this->pos();
             this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 2 + 10);
-            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 2 + 10);
+            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 2 + 30);
             textItem->setPos(this_pos);
             break;
         }
@@ -176,14 +184,25 @@ void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
         }
         case Conditional:{
             auto this_pos = this->pos();
-            this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 3);
-            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 3);
+            this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 4);
+            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 4);
             textItem->setPos(this_pos);
             break;
         }
         default:
             break;
         }
+}
+
+void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    if(textItem == NULL)
+    {
+        textItem = new DiagramTextItem("Text");
+        textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+        textItem->setZValue(1000.0);
+
+        setTextItemPosition();
 
         scene()->addItem(textItem);
         textItem->mouseDoubleClickEvent(event);
