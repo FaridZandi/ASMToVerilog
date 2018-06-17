@@ -61,6 +61,7 @@
 
 #include <QTextCursor>
 #include <QGraphicsSceneMouseEvent>
+#include <iostream>
 
 DiagramScene::DiagramScene(QMenu *itemMenu, QObject *parent)
     : QGraphicsScene(parent)
@@ -196,6 +197,14 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
         if (endItems.count() && endItems.first() == line)
             endItems.removeFirst();
 
+        while(startItems.count() && (startItems.first()->type() == DiagramTextItem::Type or startItems.first() == line)){
+            startItems.removeFirst();
+        }
+
+        while(endItems.count() && (endItems.first()->type() == DiagramTextItem::Type or endItems.first() == line)){
+            endItems.removeFirst();
+        }
+
         removeItem(line);
         delete line;
 
@@ -213,6 +222,9 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             addItem(arrow);
             arrow->updatePosition();
         }
+
+
+
     }
     line = 0;
     QGraphicsScene::mouseReleaseEvent(mouseEvent);

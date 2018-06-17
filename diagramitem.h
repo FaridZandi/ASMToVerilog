@@ -77,12 +77,14 @@ public:
     QPixmap image() const;
     int type() const override { return Type;}
        
+    void enlarge();
+    void shrink();
+
+    qreal getScaleRate() const;
 
 protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-    
-    void dragMoveEvent(QGraphicsSceneDragDropEvent *event);
     void mouseMoveEvent(QGraphicsSceneMouseEvent *event);
 
 private:
@@ -91,6 +93,7 @@ private:
     QMenu *myContextMenu;
     QList<Arrow *> arrows;
     DiagramTextItem *textItem;
+    qreal scaleRate;
 
     void setTextItemPosition();
 

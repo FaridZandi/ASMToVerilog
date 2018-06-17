@@ -52,7 +52,9 @@
 
 #include "diagramtextitem.h"
 #include "diagramscene.h"
+#include <QTextCursor>
 #include <iostream>
+
 DiagramTextItem::DiagramTextItem(QGraphicsItem *parent)
     : QGraphicsTextItem(parent)
 {
@@ -76,6 +78,10 @@ QVariant DiagramTextItem::itemChange(GraphicsItemChange change,
 void DiagramTextItem::focusOutEvent(QFocusEvent *event)
 {
     setTextInteractionFlags(Qt::NoTextInteraction);
+    setFocus(Qt::MouseFocusReason);
+    QTextCursor c = textCursor();
+    c.clearSelection();
+    setTextCursor(c);
     emit lostFocus(this);
     QGraphicsTextItem::focusOutEvent(event);
 }

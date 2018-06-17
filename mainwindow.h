@@ -83,6 +83,8 @@ private slots:
     void backgroundButtonGroupClicked(QAbstractButton *button);
     void buttonGroupClicked(int id);
     void deleteItem();
+    void enlargeShape();
+    void shrinkShape();
     void pointerGroupClicked(int id);
     void bringToFront();
     void sendToBack();
@@ -120,6 +122,8 @@ private:
     QAction *exitAction;
     QAction *addAction;
     QAction *deleteAction;
+    QAction *enlargeShapeAction;
+    QAction *shrinkShapeAction;
 
     QAction *toFrontAction;
     QAction *sendBackAction;

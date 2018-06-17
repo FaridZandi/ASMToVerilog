@@ -90,7 +90,23 @@ void MainWindow::deleteItem()
              qgraphicsitem_cast<DiagramItem *>(item)->removeArrows();
          scene->removeItem(item);
          delete item;
-     }
+    }
+}
+
+void MainWindow::enlargeShape(){
+    foreach (QGraphicsItem *item, scene->selectedItems()) {
+        if (item->type() == DiagramItem::Type) {
+            qgraphicsitem_cast<DiagramItem *>(item)->enlarge();
+        }
+    }
+}
+
+void MainWindow::shrinkShape(){
+    foreach (QGraphicsItem *item, scene->selectedItems()) {
+        if (item->type() == DiagramItem::Type) {
+            qgraphicsitem_cast<DiagramItem *>(item)->shrink();
+        }
+    }
 }
 
 void MainWindow::pointerGroupClicked(int)
@@ -309,6 +325,16 @@ void MainWindow::createActions()
     deleteAction->setStatusTip(tr("Delete item from diagram"));
     connect(deleteAction, SIGNAL(triggered()), this, SLOT(deleteItem()));
 
+    enlargeShapeAction = new QAction(QIcon(":/images/expand.png"), tr("&Enlarge"), this);
+    enlargeShapeAction->setShortcut(tr("Enlarge"));
+    enlargeShapeAction->setStatusTip(tr("enlarge the shape"));
+    connect(enlargeShapeAction, SIGNAL(triggered()), this, SLOT(enlargeShape()));
+
+    shrinkShapeAction = new QAction(QIcon(":/images/collapse.png"), tr("&Shrink"), this);
+    shrinkShapeAction->setShortcut(tr("Shrink"));
+    shrinkShapeAction->setStatusTip(tr("shrink the shape"));
+    connect(shrinkShapeAction, SIGNAL(triggered()), this, SLOT(shrinkShape()));
+
     exitAction = new QAction(tr("E&xit"), this);
     exitAction->setShortcuts(QKeySequence::Quit);
     exitAction->setStatusTip(tr("Quit Scenediagram example"));
@@ -343,6 +369,8 @@ void MainWindow::createMenus()
 
     itemMenu = menuBar()->addMenu(tr("&Item"));
     itemMenu->addAction(deleteAction);
+    itemMenu->addAction(enlargeShapeAction);
+    itemMenu->addAction(shrinkShapeAction);
     itemMenu->addSeparator();
     itemMenu->addAction(toFrontAction);
     itemMenu->addAction(sendBackAction);
@@ -355,6 +383,8 @@ void MainWindow::createToolbars()
 {
     editToolBar = addToolBar(tr("Edit"));
     editToolBar->addAction(deleteAction);
+    editToolBar->addAction(enlargeShapeAction);
+    editToolBar->addAction(shrinkShapeAction);
     editToolBar->addAction(toFrontAction);
     editToolBar->addAction(sendBackAction);
 

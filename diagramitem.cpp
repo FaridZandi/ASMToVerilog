@@ -53,6 +53,7 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
              QGraphicsItem *parent)
     : QGraphicsPolygonItem(parent)
 {
+    scaleRate = 1;
     myDiagramType = diagramType;
     myContextMenu = contextMenu;
     textItem = NULL;
@@ -96,7 +97,10 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
 
 DiagramItem::~DiagramItem()
 {
-    delete textItem;
+    if(textItem){
+        scene()->removeItem(textItem);
+        delete textItem;
+    }
 }
 
 void DiagramItem::removeArrow(Arrow *arrow)
@@ -134,6 +138,26 @@ QPixmap DiagramItem::image() const
     return pixmap;
 }
 
+void DiagramItem::enlarge(){
+    scaleRate *= 1.25;
+    QPolygonF qpf = polygon();
+    QTransform trans;
+    trans=trans.scale(scaleRate,scaleRate);
+    QPolygonF qpf2 = trans.map(qpf);
+    setPolygon(qpf2);
+    setTextItemPosition();
+}
+
+void DiagramItem::shrink(){
+    scaleRate /= 1.25;
+    QPolygonF qpf = polygon();
+    QTransform trans;
+    trans=trans.scale(scaleRate,scaleRate);
+    QPolygonF qpf2 = trans.map(qpf);
+    setPolygon(qpf2);
+    setTextItemPosition();
+}
+
 void DiagramItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 {
     scene()->clearSelection();
@@ -152,22 +176,30 @@ QVariant DiagramItem::itemChange(GraphicsItemChange change, const QVariant &valu
     return value;
 }
 
-void DiagramItem::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
-{
-}
-
 void DiagramItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 {
     if(textItem){
         setTextItemPosition();
     }
 
+    for(auto a : arrows){
+        a->setTextItemPosition();
+    }
+
     QGraphicsItem::mouseMoveEvent(event);
+}
+
+qreal DiagramItem::getScaleRate() const
+{
+    return scaleRate;
 }
 
 void DiagramItem::setTextItemPosition()
 {
-        switch(myDiagramType){
+    if(not textItem) return;
+
+
+    switch(myDiagramType){
         case Io:{
             auto this_pos = this->pos();
             this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 2 + 10);
@@ -201,6 +233,8 @@ void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
         textItem = new DiagramTextItem("Text");
         textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
         textItem->setZValue(1000.0);
+        textItem->setFlag(QGraphicsItem::ItemIsMovable, false);
+        textItem->setFlag(QGraphicsItem::ItemIsSelectable, false);
 
         setTextItemPosition();
 

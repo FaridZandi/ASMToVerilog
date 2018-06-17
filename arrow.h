@@ -68,15 +68,23 @@ public:
     DiagramItem *endItem() const { return myEndItem; }
 
     void updatePosition();
+    void setTextItemPosition();
+
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
 
 private:
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
+
+
     DiagramItem *myStartItem;
     DiagramItem *myEndItem;
     QColor myColor;
     QPolygonF arrowHead;
+
+    DiagramTextItem *textItem;
+
 };
 
 #endif // ARROW_H

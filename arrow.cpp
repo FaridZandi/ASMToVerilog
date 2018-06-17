@@ -43,12 +43,15 @@
 #include <qmath.h>
 #include <QPen>
 #include <QPainter>
+#include <QTextCursor>
+#include <QGraphicsScene>
 
 Arrow::Arrow(DiagramItem *startItem, DiagramItem *endItem, QGraphicsItem *parent)
     : QGraphicsLineItem(parent)
 {
     myStartItem = startItem;
     myEndItem = endItem;
+    textItem = NULL;
     setFlag(QGraphicsItem::ItemIsSelectable, true);
     myColor = Qt::black;
     setPen(QPen(myColor, 2, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -71,8 +74,7 @@ QPainterPath Arrow::shape() const
     return path;
 }
 
-void Arrow::updatePosition()
-{
+void Arrow::updatePosition(){
     QLineF line(mapFromItem(myStartItem, 0, 0), mapFromItem(myEndItem, 0, 0));
     setLine(line);
 }
@@ -90,7 +92,12 @@ void Arrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     painter->setBrush(myColor);
 
     QLineF centerLine(myStartItem->pos(), myEndItem->pos());
+
     QPolygonF endPolygon = myEndItem->polygon();
+    QTransform trans;
+    trans = trans.scale(myEndItem->getScaleRate(),myEndItem->getScaleRate());
+    endPolygon = trans.map(endPolygon);
+
     QPointF p1 = endPolygon.first() + myEndItem->pos();
     QPointF p2;
     QPointF intersectPoint;
@@ -125,5 +132,41 @@ void Arrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
         painter->drawLine(myLine);
         myLine.translate(0,-8.0);
         painter->drawLine(myLine);
+    }
+}
+
+void Arrow::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    if(textItem == NULL)
+    {
+        textItem = new DiagramTextItem("Text");
+        textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+        textItem->setZValue(1000.0);
+        textItem->setFlag(QGraphicsItem::ItemIsMovable, false);
+        textItem->setFlag(QGraphicsItem::ItemIsSelectable, false);
+
+        setTextItemPosition();
+
+        startItem()->scene()->addItem(textItem);
+        textItem->mouseDoubleClickEvent(event);
+        textItem->setFocus(Qt::MouseFocusReason);
+        textItem->setSelected(true);
+    }
+    else{
+        textItem->mouseDoubleClickEvent(event);
+        textItem->setFocus(Qt::MouseFocusReason);
+        textItem->setSelected(true);
+        QTextCursor c = textItem->textCursor();
+        c.clearSelection();
+        textItem->setTextCursor(c);
+    }
+}
+
+void Arrow::setTextItemPosition(){
+    if(textItem){
+        textItem->setPos(
+            (endItem()->pos().x() + startItem()->pos().x()) / 2,
+            (endItem()->pos().y() + startItem()->pos().y()) / 2
+        );
     }
 }
