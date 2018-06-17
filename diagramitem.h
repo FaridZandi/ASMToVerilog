@@ -40,7 +40,7 @@
 
 #ifndef DIAGRAMITEM_H
 #define DIAGRAMITEM_H
-
+#include "diagramtextitem.h"
 #include <QGraphicsPixmapItem>
 #include <QList>
 
@@ -65,7 +65,7 @@ public:
     enum DiagramType { Step, Conditional, StartEnd, Io };
 
     DiagramItem(DiagramType diagramType, QMenu *contextMenu, QGraphicsItem *parent = 0);
-
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
     void removeArrow(Arrow *arrow);
     void removeArrows();
     DiagramType diagramType() const { return myDiagramType; }
@@ -73,16 +73,24 @@ public:
     void addArrow(Arrow *arrow);
     QPixmap image() const;
     int type() const override { return Type;}
+       
 
 protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
+    
+    void dragMoveEvent(QGraphicsSceneDragDropEvent *event);
+
 
 private:
     DiagramType myDiagramType;
     QPolygonF myPolygon;
     QMenu *myContextMenu;
     QList<Arrow *> arrows;
+    DiagramTextItem *textItem;
+
+
+
 };
 
 #endif // DIAGRAMITEM_H

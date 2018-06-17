@@ -292,7 +292,7 @@ void MainWindow::createToolBox()
 }
 
 void MainWindow::createActions()
-{
+{  
     toFrontAction = new QAction(QIcon(":/images/bringtofront.png"),
                                 tr("Bring to &Front"), this);
     toFrontAction->setShortcut(tr("Ctrl+F"));

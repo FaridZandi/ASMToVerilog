@@ -52,9 +52,14 @@
 
 #include "diagramtextitem.h"
 #include "diagramscene.h"
-
+#include <iostream>
 DiagramTextItem::DiagramTextItem(QGraphicsItem *parent)
     : QGraphicsTextItem(parent)
+{
+    setFlag(QGraphicsItem::ItemIsMovable);
+    setFlag(QGraphicsItem::ItemIsSelectable);
+}
+DiagramTextItem::DiagramTextItem(const QString &text, QGraphicsItem *parent): QGraphicsTextItem(text , parent)
 {
     setFlag(QGraphicsItem::ItemIsMovable);
     setFlag(QGraphicsItem::ItemIsSelectable);

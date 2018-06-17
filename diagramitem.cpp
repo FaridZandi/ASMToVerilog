@@ -40,11 +40,14 @@
 
 #include "diagramitem.h"
 #include "arrow.h"
+#include "diagramtextitem.h"
 
 #include <QGraphicsScene>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QMenu>
 #include <QPainter>
+#include <iostream>
+#include <QTextCursor>
 
 DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
              QGraphicsItem *parent)
@@ -52,7 +55,7 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
 {
     myDiagramType = diagramType;
     myContextMenu = contextMenu;
-
+    textItem = NULL;
     QPainterPath path;
     switch (myDiagramType) {
         case StartEnd:
@@ -137,4 +140,58 @@ QVariant DiagramItem::itemChange(GraphicsItemChange change, const QVariant &valu
     }
 
     return value;
+}
+
+void DiagramItem::dragMoveEvent(QGraphicsSceneDragDropEvent *event)
+{
+}
+
+void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    if(textItem == NULL)
+    {
+        textItem = new DiagramTextItem("Text");
+        textItem->setTextInteractionFlags(Qt::TextEditorInteraction);
+        textItem->setZValue(1000.0);
+
+        switch(myDiagramType){
+        case Io:{
+            auto this_pos = this->pos();
+            this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 2 + 10);
+            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 2 + 10);
+            textItem->setPos(this_pos);
+            break;
+        }
+        case Step:{
+            auto this_pos = this->pos();
+            this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 2 + 10);
+            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 2 + 10);
+            textItem->setPos(this_pos);
+            break;
+        }
+        case Conditional:{
+            auto this_pos = this->pos();
+            this_pos.setX(this_pos.x() - this->boundingRect().size().width() / 3);
+            this_pos.setY(this_pos.y() - this->boundingRect().size().height() / 3);
+            textItem->setPos(this_pos);
+            break;
+        }
+        default:
+            break;
+        }
+
+        scene()->addItem(textItem);
+        textItem->mouseDoubleClickEvent(event);
+        textItem->setFocus(Qt::MouseFocusReason);
+        textItem->setSelected(true);
+    }
+    else{
+        textItem->mouseDoubleClickEvent(event);
+        textItem->setFocus(Qt::MouseFocusReason);
+        textItem->setSelected(true);
+        QTextCursor c = textItem->textCursor();
+        c.clearSelection();
+        textItem->setTextCursor(c);
+    }
+
 }
