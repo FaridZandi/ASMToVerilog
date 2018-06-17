@@ -242,9 +242,9 @@ void MainWindow::createToolBox()
     connect(buttonGroup, SIGNAL(buttonClicked(int)),
             this, SLOT(buttonGroupClicked(int)));
     QGridLayout *layout = new QGridLayout;
-    layout->addWidget(createCellWidget(tr("Conditional"), DiagramItem::Conditional), 0, 0);
-    layout->addWidget(createCellWidget(tr("Process"), DiagramItem::Step),0, 1);
-    layout->addWidget(createCellWidget(tr("Input/Output"), DiagramItem::Io), 1, 0);
+    layout->addWidget(createCellWidget(tr("Decision Box"), DiagramItem::Conditional), 0, 0);
+    layout->addWidget(createCellWidget(tr("State Box"), DiagramItem::Step),0, 1);
+    layout->addWidget(createCellWidget(tr("Conditional Box"), DiagramItem::Io), 1, 0);
 
     QToolButton *textButton = new QToolButton;
     textButton->setCheckable(true);
