@@ -124,7 +124,12 @@ void Arrow::paint(QPainter *painter, const QStyleOptionGraphicsItem *,
     arrowHead.clear();
     arrowHead << line().p1() << arrowP1 << arrowP2;
     painter->drawLine(line());
-    painter->drawPolygon(arrowHead);
+
+    if(endItem()->diagramType() != DiagramItem::DiagramType::Point){
+        painter->drawPolygon(arrowHead);
+    }
+
+
     if (isSelected()) {
         painter->setPen(QPen(myColor, 1, Qt::DashLine));
         QLineF myLine = line();
@@ -169,4 +174,15 @@ void Arrow::setTextItemPosition(){
             (endItem()->pos().y() + startItem()->pos().y()) / 2
         );
     }
+}
+
+Arrow::~Arrow(){
+    if(textItem){
+        endItem()->scene()->removeItem(textItem);
+        delete textItem;
+    }
+
+//    if(endItem()->diagramType() == DiagramItem::DiagramType::Point){
+//        endItem()->scene()->removeItem(endItem());
+//    }
 }

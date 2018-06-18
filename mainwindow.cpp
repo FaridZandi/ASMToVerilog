@@ -3,8 +3,11 @@
 #include "diagramscene.h"
 #include "diagramtextitem.h"
 #include "mainwindow.h"
+#include "asmblock.h"
 
 #include <QtWidgets>
+#include <iostream>
+#include <map>
 
 const int InsertTextButton = 10;
 
@@ -107,6 +110,128 @@ void MainWindow::shrinkShape(){
             qgraphicsitem_cast<DiagramItem *>(item)->shrink();
         }
     }
+}
+
+DiagramItem* findArrowDest(Arrow* a, std::string& arrow_text, Arrow* &last_arrow_piece){
+    DiagramItem* current = a->endItem();
+    Arrow* currentArrow = a;
+    if(currentArrow->textItem){
+        arrow_text = currentArrow->textItem->toPlainText().toStdString();
+    }
+    last_arrow_piece = a;
+
+    while(current->diagramType() == DiagramItem::DiagramType::Point){
+
+        if(currentArrow->textItem){
+            arrow_text = currentArrow->textItem->toPlainText().toStdString();
+        }
+
+        Arrow* nextArrow;
+
+        for(auto arrow : current->getArrows()){
+            if(arrow != currentArrow){
+                nextArrow = arrow;
+                break;
+            }
+        }
+        if(not nextArrow){
+            return NULL;
+        }
+
+        current = nextArrow->endItem();
+        currentArrow = nextArrow;
+        last_arrow_piece = currentArrow;
+    }
+    return current;
+}
+
+
+void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector<condition> conditions, ASMBlock& asm_block,
+              std::map<DiagramItem*, int>& states){
+
+    std::cout << item << std::endl;
+
+    std::string text;
+
+    if(item->textItem){
+        text = item->textItem->toPlainText().toStdString();
+    } else {
+        text = "";
+    }
+
+    switch(item->diagramType()){
+    case DiagramItem::DiagramType::Step:
+        if(not is_root){
+            next_state next{conditions, states[item]};
+            asm_block.next_states.push_back(next);
+            return;
+        } else {
+            asm_block.default_code = text;
+        }
+        break;
+    case DiagramItem::DiagramType::Conditional:
+        break;
+    case DiagramItem::DiagramType::Io:{
+        conditional_code code{conditions, text};
+        asm_block.conditional_codes.push_back(code);
+        break;
+    }
+
+    default:
+        std::cout << "don't know what to do" << std::endl;
+        break;
+    }
+
+    auto arrows = item->getArrows();
+
+    std::cout << arrows.size() << std::endl;
+
+    for(auto arrow : arrows){
+        if(arrow->startItem() == item){
+            std::string arrow_value;
+
+            Arrow* last_arrow_piece;
+
+            DiagramItem* arrowDest = findArrowDest(arrow, arrow_value, last_arrow_piece);
+
+            if(item->diagramType() == DiagramItem::DiagramType::Conditional){
+                condition c{text, arrow_value};
+                auto new_conditions = conditions;
+                new_conditions.push_back(c);
+
+                traverse(false, arrowDest, last_arrow_piece, new_conditions, asm_block, states);
+            } else {
+                traverse(false, arrowDest, last_arrow_piece, conditions, asm_block, states);
+            }
+        }
+    }
+}
+
+void MainWindow::convert(){
+    std::map<DiagramItem*, int> states;
+
+    int counter = 0;
+    for(auto i : scene->items()){
+        if(i->type() == DiagramItem::Type){
+            DiagramItem *diagramItem = qgraphicsitem_cast<DiagramItem *>(i);
+            if(diagramItem->diagramType() == DiagramItem::DiagramType::Step){
+                states.insert(std::make_pair(diagramItem, counter));
+                counter ++;
+            }
+        }
+    }
+
+    std::vector<ASMBlock> asm_blocks;
+
+    for(auto state = states.begin(); state != states.end(); state++){
+        ASMBlock asm_block(state->second);
+
+        traverse(true, state->first, NULL, std::vector<condition>(), asm_block, states);
+
+        asm_blocks.push_back(asm_block);
+    }
+
+    std::cout << asm_blocks.size() << std::endl;
 }
 
 void MainWindow::pointerGroupClicked(int)
@@ -265,11 +390,11 @@ void MainWindow::createToolBox()
     QToolButton *textButton = new QToolButton;
     textButton->setCheckable(true);
     buttonGroup->addButton(textButton, InsertTextButton);
-    textButton->setIcon(QIcon(QPixmap(":/images/textpointer.png")));
+    textButton->setIcon(QIcon(QPixmap(":/images/comment.png")));
     textButton->setIconSize(QSize(50, 50));
     QGridLayout *textLayout = new QGridLayout;
     textLayout->addWidget(textButton, 0, 0, Qt::AlignHCenter);
-    textLayout->addWidget(new QLabel(tr("Text")), 1, 0, Qt::AlignCenter);
+    textLayout->addWidget(new QLabel(tr("Comment")), 1, 0, Qt::AlignCenter);
     QWidget *textWidget = new QWidget;
     textWidget->setLayout(textLayout);
     layout->addWidget(textWidget, 1, 1);
@@ -324,6 +449,11 @@ void MainWindow::createActions()
     deleteAction->setShortcut(tr("Delete"));
     deleteAction->setStatusTip(tr("Delete item from diagram"));
     connect(deleteAction, SIGNAL(triggered()), this, SLOT(deleteItem()));
+
+    convertAction = new QAction(QIcon(":/images/play.png"), tr("&Convert"), this);
+    convertAction->setShortcut(tr("Convert"));
+    convertAction->setStatusTip(tr("Convert the ASM to Verilog"));
+    connect(convertAction, SIGNAL(triggered()), this, SLOT(convert()));
 
     enlargeShapeAction = new QAction(QIcon(":/images/expand.png"), tr("&Enlarge"), this);
     enlargeShapeAction->setShortcut(tr("Enlarge"));
@@ -382,11 +512,11 @@ void MainWindow::createMenus()
 void MainWindow::createToolbars()
 {
     editToolBar = addToolBar(tr("Edit"));
-    editToolBar->addAction(deleteAction);
+//    editToolBar->addAction(deleteAction);
     editToolBar->addAction(enlargeShapeAction);
     editToolBar->addAction(shrinkShapeAction);
-    editToolBar->addAction(toFrontAction);
-    editToolBar->addAction(sendBackAction);
+//    editToolBar->addAction(toFrontAction);
+//    editToolBar->addAction(sendBackAction);
 
     fontCombo = new QFontComboBox();
     connect(fontCombo, SIGNAL(currentFontChanged(QFont)),
@@ -431,14 +561,14 @@ void MainWindow::createToolbars()
     textToolBar = addToolBar(tr("Font"));
     textToolBar->addWidget(fontCombo);
     textToolBar->addWidget(fontSizeCombo);
-    textToolBar->addAction(boldAction);
-    textToolBar->addAction(italicAction);
-    textToolBar->addAction(underlineAction);
+//    textToolBar->addAction(boldAction);
+//    textToolBar->addAction(italicAction);
+//    textToolBar->addAction(underlineAction);
 
-    colorToolBar = addToolBar(tr("Color"));
-    colorToolBar->addWidget(fontColorToolButton);
-    colorToolBar->addWidget(fillColorToolButton);
-    colorToolBar->addWidget(lineColorToolButton);
+//    colorToolBar = addToolBar(tr("Color"));
+//    colorToolBar->addWidget(fontColorToolButton);
+//    colorToolBar->addWidget(fillColorToolButton);
+//    colorToolBar->addWidget(lineColorToolButton);
 
     QToolButton *pointerButton = new QToolButton;
     pointerButton->setCheckable(true);
@@ -466,6 +596,8 @@ void MainWindow::createToolbars()
     pointerToolbar->addWidget(pointerButton);
     pointerToolbar->addWidget(linePointerButton);
     pointerToolbar->addWidget(sceneScaleCombo);
+    pointerToolbar->addSeparator();
+    pointerToolbar->addAction(convertAction);
 }
 
 QWidget *MainWindow::createBackgroundCellWidget(const QString &text, const QString &image)

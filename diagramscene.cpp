@@ -205,6 +205,7 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             endItems.removeFirst();
         }
 
+
         removeItem(line);
         delete line;
 
@@ -221,6 +222,27 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             arrow->setZValue(-1000.0);
             addItem(arrow);
             arrow->updatePosition();
+        } else if(startItems.count() > 0 && endItems.count() == 0 &&
+                  startItems.first()->type() == DiagramItem::Type){
+
+            DiagramItem *startItem = qgraphicsitem_cast<DiagramItem *>(startItems.first());
+
+            DiagramItem *endItem = new DiagramItem(DiagramItem::DiagramType::Point, myItemMenu);
+            endItem->setBrush(myItemColor);
+            addItem(endItem);
+            endItem->setPos(mouseEvent->scenePos());
+
+
+            Arrow *arrow = new Arrow(startItem, endItem);
+            arrow->setColor(myLineColor);
+            startItem->addArrow(arrow);
+            endItem->addArrow(arrow);
+            arrow->setZValue(-1000.0);
+            addItem(arrow);
+            arrow->updatePosition();
+
+
+
         }
 
 

@@ -85,6 +85,7 @@ private slots:
     void deleteItem();
     void enlargeShape();
     void shrinkShape();
+    void convert();
     void pointerGroupClicked(int id);
     void bringToFront();
     void sendToBack();
@@ -124,6 +125,7 @@ private:
     QAction *deleteAction;
     QAction *enlargeShapeAction;
     QAction *shrinkShapeAction;
+    QAction *convertAction;
 
     QAction *toFrontAction;
     QAction *sendBackAction;

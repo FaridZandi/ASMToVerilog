@@ -62,7 +62,7 @@ class DiagramItem : public QGraphicsPolygonItem
 {
 public:
     enum { Type = UserType + 15 };
-    enum DiagramType { Step, Conditional, StartEnd, Io };
+    enum DiagramType { Step, Conditional, StartEnd, Io, Point};
 
     DiagramItem(DiagramType diagramType, QMenu *contextMenu, QGraphicsItem *parent = 0);
 
@@ -82,6 +82,10 @@ public:
 
     qreal getScaleRate() const;
 
+    DiagramTextItem *textItem;
+
+    QList<Arrow *> getArrows() const;
+
 protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
@@ -92,11 +96,10 @@ private:
     QPolygonF myPolygon;
     QMenu *myContextMenu;
     QList<Arrow *> arrows;
-    DiagramTextItem *textItem;
+
     qreal scaleRate;
 
     void setTextItemPosition();
-
 };
 
 #endif // DIAGRAMITEM_H

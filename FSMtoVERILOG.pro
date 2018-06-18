@@ -19,12 +19,14 @@ SOURCES += main.cpp\
         arrow.cpp \
         diagramitem.cpp \
         diagramscene.cpp \
-        diagramtextitem.cpp
+        diagramtextitem.cpp \
+    asmblock.cpp
 
 HEADERS  += mainwindow.h \
     arrow.h \
     diagramitem.h \
     diagramscene.h \
-    diagramtextitem.h
+    diagramtextitem.h \
+    asmblock.h
 
 RESOURCES = diagramscene.qrc

@@ -70,6 +70,9 @@ public:
     void updatePosition();
     void setTextItemPosition();
 
+    DiagramTextItem *textItem;
+
+    virtual ~Arrow();
 
 protected:
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
@@ -77,14 +80,10 @@ protected:
 private:
     void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 
-
-    DiagramItem *myStartItem;
-    DiagramItem *myEndItem;
+    DiagramItem* myStartItem;
+    DiagramItem* myEndItem;
     QColor myColor;
     QPolygonF arrowHead;
-
-    DiagramTextItem *textItem;
-
 };
 
 #endif // ARROW_H

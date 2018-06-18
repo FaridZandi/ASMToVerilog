@@ -78,6 +78,10 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
                       << QPointF(100, 50) << QPointF(-100, 50)
                       << QPointF(-100, -50);
             break;
+        case Point:
+            path.addEllipse(-5,-5,10,10);
+            myPolygon = path.toFillPolygon();
+            break;
         default:
             path.moveTo(75, 25);
             path.arcTo(25, -25, 50, 50, 0, 90);
@@ -189,6 +193,11 @@ void DiagramItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
     QGraphicsItem::mouseMoveEvent(event);
 }
 
+QList<Arrow *> DiagramItem::getArrows() const
+{
+    return arrows;
+}
+
 qreal DiagramItem::getScaleRate() const
 {
     return scaleRate;
@@ -228,6 +237,8 @@ void DiagramItem::setTextItemPosition()
 
 void DiagramItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
+    if(diagramType() == Point) return;
+
     if(textItem == NULL)
     {
         textItem = new DiagramTextItem("Text");
