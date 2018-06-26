@@ -34,6 +34,7 @@ public:
     std::vector<next_state> next_states;
 
     ASMBlock(int id);
+
 };
 
 #endif // ASMBLOCK_H

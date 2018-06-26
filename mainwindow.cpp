@@ -6,8 +6,9 @@
 #include "asmblock.h"
 
 #include <QtWidgets>
-#include <iostream>
+#include <fstream>
 #include <map>
+#include <sstream>
 
 const int InsertTextButton = 10;
 
@@ -208,6 +209,8 @@ void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector
 }
 
 void MainWindow::convert(){
+    string fileName = "mori.v";
+
     std::map<DiagramItem*, int> states;
 
     int counter = 0;
@@ -230,8 +233,123 @@ void MainWindow::convert(){
 
         asm_blocks.push_back(asm_block);
     }
+    cout << fileName << endl;
+    ofstream verilogCode;
 
-    std::cout << asm_blocks.size() << std::endl;
+    //combo. segment
+    /////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
+    cout << "always @ (posedge clock)" << endl;
+    cout << "begin" << endl;
+    cout << "if (reset == 1'b1) begin" << endl;
+    cout << "\t state <= 0;" << endl;
+
+    cout << "end else" << endl;
+    cout << "case (state)" << endl;
+    for(auto asmBlock : asm_blocks)
+    {
+        cout <<  asmBlock.id << ":" << "begin" << endl;
+
+        stringstream ss(asmBlock.default_code);
+        string rt;
+
+        if(asmBlock.default_code != "")
+        {
+            while(getline(ss , rt , '\n'))
+                cout << "\t" << rt << ";" << endl;
+        }
+        bool flag = true;
+        for(auto conditionBox : asmBlock.conditional_codes)
+        {
+            if(flag)
+                cout << "\tif (";
+            else cout << "\telse if(";
+            flag = false;
+            int condSize = conditionBox.conditions.size();
+            if(condSize == 1)
+            {
+                if(atoi(conditionBox.conditions[0].value.c_str()) == 1)
+                    cout <<  conditionBox.conditions[0].condition ;
+                else
+                    cout << "(!(" << conditionBox.conditions[0].condition << "))";
+            }
+            else
+            for(int i = 0 ; i < condSize; i++)
+            {
+                if(atoi(conditionBox.conditions[i].value.c_str()) == 1)
+                    cout << "(" << conditionBox.conditions[i].condition << ")";
+                else
+                    cout << "(!( " << conditionBox.conditions[i].condition << "))";
+                if (i < condSize - 1)
+                    cout << " && " ;
+            }
+            cout << ") begin"<< endl;
+
+            stringstream ss(conditionBox.code);
+            string rt;
+
+            if(conditionBox.code != "")
+            {
+                while(getline(ss , rt , '\n'))
+                    cout << "\t\t" << rt << ";" << endl;
+            }
+            cout << "\tend" << endl;
+        }
+
+    }
+    cout << "end" << endl;
+    cout << "endcase" << endl;
+    //seq. segment
+  ///////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    //nextState generator
+
+    cout << "always @ (posedge clock)" << endl;
+    cout << "begin" << endl;
+    cout << "if (reset == 1'b1) begin" << endl;
+    cout << "\t state <= 0;" << endl;
+
+    cout << "end else" << endl;
+    cout << "case (state)" << endl;
+    for(auto asmBlock : asm_blocks)
+    {
+        cout <<  asmBlock.id << ":" << "begin" << endl;
+        bool flag = true;
+        for(auto stateBox : asmBlock.next_states)
+        {
+            if(flag)
+            cout << "\tif (";
+            else cout << "\telse if (";
+            flag = false;
+            int stateSize = stateBox.conditions.size();
+            if(stateSize == 1)
+            {
+                if(atoi(stateBox.conditions[0].value.c_str()) == 1)
+                    cout <<  stateBox.conditions[0].condition ;
+                else
+                    cout << "(!(" << stateBox.conditions[0].condition << "))";
+            }
+            else
+            for(int i = 0 ; i < stateSize ; i++)
+            {
+                if(atoi(stateBox.conditions[i].value.c_str()) == 1)
+                    cout << "(" << stateBox.conditions[i].condition << ")";
+                else
+                    cout << "(!(" << stateBox.conditions[i].condition << "))";
+                if (i < stateBox.conditions.size() - 1)
+                    cout << " && " ;
+            }
+            cout << ")"<< endl;
+            cout << "\t\tstate <= " << stateBox.next_state_id << ";" << endl;
+        }
+    cout << "end" << endl;
+    }
+    cout << "end" << endl;
+    cout << "endcase" << endl;
+
+
+
 }
 
 void MainWindow::pointerGroupClicked(int)

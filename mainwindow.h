@@ -56,7 +56,8 @@
 #include "diagramitem.h"
 
 #include <QMainWindow>
-
+#include <iostream>
+using namespace std;
 class DiagramScene;
 
 class QAction;
