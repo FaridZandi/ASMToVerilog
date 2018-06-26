@@ -69,9 +69,9 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
             myPolygon = path.toFillPolygon();
             break;
         case Conditional:
-            myPolygon << QPointF(-100, 0) << QPointF(0, 100)
-                      << QPointF(100, 0) << QPointF(0, -100)
-                      << QPointF(-100, 0);
+            myPolygon << QPointF(-60, 0) << QPointF(0, 60)
+                      << QPointF(60, 0) << QPointF(0, -60)
+                      << QPointF(-60, 0);
             break;
         case Step:
             myPolygon << QPointF(-100, -50) << QPointF(100, -50)

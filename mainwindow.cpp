@@ -6,8 +6,10 @@
 #include "asmblock.h"
 
 #include <QtWidgets>
-#include <iostream>
+#include <fstream>
 #include <map>
+#include <sstream>
+#include <fstream>
 
 const int InsertTextButton = 10;
 
@@ -149,8 +151,6 @@ DiagramItem* findArrowDest(Arrow* a, std::string& arrow_text, Arrow* &last_arrow
 void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector<condition> conditions, ASMBlock& asm_block,
               std::map<DiagramItem*, int>& states){
 
-    std::cout << item << std::endl;
-
     std::string text;
 
     if(item->textItem){
@@ -184,7 +184,6 @@ void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector
 
     auto arrows = item->getArrows();
 
-    std::cout << arrows.size() << std::endl;
 
     for(auto arrow : arrows){
         if(arrow->startItem() == item){
@@ -207,28 +206,61 @@ void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector
     }
 }
 
-void MainWindow::convert(){
-    std::cout << inputs_output_table->rowCount() << std::endl;
 
-    int rowCount = inputs_output_table->rowCount();
+void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& states,
+              std::vector<DiagramItem*> visited_items, std::vector<std::string>& errors){
 
-    for(int i = 0; i < rowCount; i++){
 
-        if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
-
-            auto index = inputs_output_table->model()->index(i, 1);
-            auto widget = inputs_output_table->indexWidget(index);
-            QComboBox* comboBox = static_cast<QComboBox*>(widget);
-            std::string IOType = comboBox->currentText().toStdString();
-
-            std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
-
-            int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
-
-            std::cout << IOName << " " << IOType << " " << bits << std::endl;
+    if (item->diagramType() == DiagramItem::DiagramType::Step){
+        if(not is_root){
+            return;
         }
     }
 
+    for(auto visited_item : visited_items){
+        if(visited_item == item){
+            errors.push_back("found a loop without any states!");
+            return;
+        }
+    }
+
+    if(visited_items.size() > 0){
+        auto last_item = visited_items[visited_items.size() - 1];
+
+        if(item->diagramType() == DiagramItem::DiagramType::Io and
+           last_item->diagramType() == DiagramItem::DiagramType::Io)
+        {
+            errors.push_back("found conditional box after another conditional box");
+            return;
+        }
+
+        if(item->diagramType() == DiagramItem::DiagramType::Io and
+           last_item->diagramType() == DiagramItem::DiagramType::Step)
+        {
+            errors.push_back("found conditional box after a state box");
+            return;
+        }
+    }
+
+    auto arrows = item->getArrows();
+
+    for(auto arrow : arrows){
+        if(arrow->startItem() == item){
+            std::string arrow_value;
+            Arrow* last_arrow_piece;
+            DiagramItem* arrowDest = findArrowDest(arrow, arrow_value, last_arrow_piece);
+
+            auto new_visited_states = visited_items;
+
+            new_visited_states.push_back(item);
+
+            find_errors(false, arrowDest, states, new_visited_states, errors);
+        }
+    }
+}
+
+
+void MainWindow::convert(){
 
     std::map<DiagramItem*, int> states;
 
@@ -243,6 +275,82 @@ void MainWindow::convert(){
         }
     }
 
+    std::vector<std::string> errors;
+
+    for(auto state = states.begin(); state != states.end(); state++){
+        find_errors(true, state->first, states, std::vector<DiagramItem*>(), errors);
+    }
+
+    for(auto error : errors){
+        std::cout << error << std::endl;
+    }
+
+    if(errors.size()){
+        return;
+    }
+
+    std::string module_name = module_name_input->text().toStdString();
+
+    string fileName = module_name + ".v";
+
+    std::ofstream output_file(fileName);
+
+    output_file << "module " << module_name_input->text().toStdString() << "(" ;
+
+    int rowCount = inputs_output_table->rowCount();
+
+    bool first = true;
+
+    for(int i = 0; i < rowCount; i++){
+        if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
+
+            auto index = inputs_output_table->model()->index(i, 1);
+            auto widget = inputs_output_table->indexWidget(index);
+            QComboBox* comboBox = static_cast<QComboBox*>(widget);
+            std::string IOType = comboBox->currentText().toStdString();
+
+            std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
+
+            int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
+
+            if(!first){
+                std::cout << ", ";
+            }
+
+            std::cout << IOName;
+
+            first = false;
+        }
+    }
+
+    output_file << ");\n" << std::endl;
+
+    for(int i = 0; i < rowCount; i++){
+        if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
+
+            auto index = inputs_output_table->model()->index(i, 1);
+            auto widget = inputs_output_table->indexWidget(index);
+            QComboBox* comboBox = static_cast<QComboBox*>(widget);
+            std::string IOType = comboBox->currentText().toStdString();
+
+            std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
+
+            int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
+
+            if(IOType == "input"){
+                std::cout << "input reg[" << bits << "] " << IOName << ";";
+            } else {
+                std::cout << "ouput wire[" << bits << "] " << IOName << ";";
+            }
+
+            std::cout << "\n";
+        }
+    }
+
+
+
+
+
     std::vector<ASMBlock> asm_blocks;
 
     for(auto state = states.begin(); state != states.end(); state++){
@@ -253,7 +361,137 @@ void MainWindow::convert(){
         asm_blocks.push_back(asm_block);
     }
 
-    std::cout << asm_blocks.size() << std::endl;
+
+
+    //combo. segment
+    /////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
+    output_file << "always @ (posedge clock)" << endl;
+    output_file << "begin" << endl;
+    output_file << "if (reset == 1'b1) begin" << endl;
+    output_file << "\t state <= 0;" << endl;
+
+    output_file << "end else" << endl;
+    output_file << "case (state)" << endl;
+    for(auto asmBlock : asm_blocks)
+    {
+        output_file <<  asmBlock.id << ":" << "begin" << endl;
+
+        stringstream ss(asmBlock.default_code);
+        string rt;
+
+        if(asmBlock.default_code != "")
+        {
+            while(getline(ss , rt , '\n'))
+                output_file << "\t" << rt << ";" << endl;
+        }
+        bool flag = true;
+        for(auto conditionBox : asmBlock.conditional_codes)
+        {
+            if(flag){
+                output_file << "\tif (";
+            }
+            else {
+                output_file << "\telse if(";
+            }
+
+            flag = false;
+
+            int condSize = conditionBox.conditions.size();
+
+            if(condSize == 1){
+                if(atoi(conditionBox.conditions[0].value.c_str()) == 1){
+                    output_file <<  conditionBox.conditions[0].condition ;
+                }
+                else{
+                    output_file << "(!(" << conditionBox.conditions[0].condition << "))";
+                }
+            }
+            else{
+                for(int i = 0 ; i < condSize; i++){
+                    if(atoi(conditionBox.conditions[i].value.c_str()) == 1)
+                        output_file << "(" << conditionBox.conditions[i].condition << ")";
+                    else
+                        output_file << "(!( " << conditionBox.conditions[i].condition << "))";
+                    if (i < condSize - 1)
+                        output_file << " && " ;
+                }
+            }
+            output_file << ") begin"<< endl;
+
+            stringstream ss(conditionBox.code);
+            string rt;
+
+            if(conditionBox.code != "")
+            {
+                while(getline(ss , rt , '\n'))
+                    output_file << "\t\t" << rt << ";" << endl;
+            }
+            output_file << "\tend" << endl;
+        }
+    output_file << "end" << endl;
+    }
+
+    output_file << "endcase" << endl;
+    output_file << "end" << endl;
+    //seq. segment
+  ///////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    //nextState generator
+
+    output_file << "always @ (posedge clock)" << endl;
+    output_file << "begin" << endl;
+    output_file << "if (reset == 1'b1) begin" << endl;
+    output_file << "\t state <= 0;" << endl;
+
+    output_file << "end else" << endl;
+    output_file << "case (state)" << endl;
+    for(auto asmBlock : asm_blocks)
+    {
+        output_file <<  asmBlock.id << ":" << "begin" << endl;
+        bool flag = true;
+        for(auto stateBox : asmBlock.next_states)
+        {
+            int stateSize = stateBox.conditions.size();
+            if(stateSize > 0)
+            {
+                if(flag)
+                output_file << "\tif (";
+                else cout << "\telse if (";
+                flag = false;
+            }
+
+
+            if(stateSize == 1)
+            {
+                if(atoi(stateBox.conditions[0].value.c_str()) == 1)
+                    output_file <<  stateBox.conditions[0].condition ;
+                else
+                    output_file << "(!(" << stateBox.conditions[0].condition << "))";
+            }
+            else
+            for(int i = 0 ; i < stateSize ; i++)
+            {
+                if(atoi(stateBox.conditions[i].value.c_str()) == 1)
+                    output_file << "(" << stateBox.conditions[i].condition << ")";
+                else
+                    output_file << "(!(" << stateBox.conditions[i].condition << "))";
+                if (i < stateBox.conditions.size() - 1)
+                    output_file << " && " ;
+            }
+            if(stateSize > 0)
+            output_file << ")"<< endl;
+            output_file << "\t\tstate <= " << stateBox.next_state_id << ";" << endl;
+        }
+    output_file << "end" << endl;
+    }
+    output_file << "endcase" << endl;
+    output_file << "end" << endl << endl;
+
+
+    output_file << "endmodule" << std::endl;
+
 }
 
 void MainWindow::pointerGroupClicked(int)

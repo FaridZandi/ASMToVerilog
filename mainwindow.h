@@ -59,6 +59,8 @@
 #include <QTableWidget>
 #include <QLabel>
 
+#include <iostream>
+using namespace std;
 class DiagramScene;
 
 class QAction;

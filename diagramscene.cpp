@@ -227,10 +227,22 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
 
             DiagramItem *startItem = qgraphicsitem_cast<DiagramItem *>(startItems.first());
 
+            // ignore the difference on one axis based on which one has more difference.
+
+            auto pos = mouseEvent->scenePos();
+            int diffX = abs(pos.x() - startItem->pos().x());
+            int diffY = abs(pos.y() - startItem->pos().y());
+
+            if(diffX > diffY){
+                pos.setY(startItem->pos().y());
+            } else {
+                pos.setX(startItem->pos().x());
+            }
+
             DiagramItem *endItem = new DiagramItem(DiagramItem::DiagramType::Point, myItemMenu);
             endItem->setBrush(myItemColor);
             addItem(endItem);
-            endItem->setPos(mouseEvent->scenePos());
+            endItem->setPos(pos);
 
 
             Arrow *arrow = new Arrow(startItem, endItem);
