@@ -35,6 +35,10 @@ public:
 
     ASMBlock(int id);
 
+<<<<<<< HEAD
+=======
+    void print();
+>>>>>>> 02cd4fb3000c0525f42d5d799f8f473a8116fb42
 };
 
 #endif // ASMBLOCK_H
