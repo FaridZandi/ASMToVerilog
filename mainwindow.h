@@ -56,6 +56,8 @@
 #include "diagramitem.h"
 
 #include <QMainWindow>
+#include <QTableWidget>
+#include <QLabel>
 
 class DiagramScene;
 
@@ -119,6 +121,12 @@ private:
 
     DiagramScene *scene;
     QGraphicsView *view;
+
+    QLabel* module_name_label;
+    QLineEdit* module_name_input;
+
+    QLabel* input_output_table_label;
+    QTableWidget* inputs_output_table;
 
     QAction *exitAction;
     QAction *addAction;

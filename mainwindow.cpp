@@ -208,6 +208,28 @@ void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector
 }
 
 void MainWindow::convert(){
+    std::cout << inputs_output_table->rowCount() << std::endl;
+
+    int rowCount = inputs_output_table->rowCount();
+
+    for(int i = 0; i < rowCount; i++){
+
+        if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
+
+            auto index = inputs_output_table->model()->index(i, 1);
+            auto widget = inputs_output_table->indexWidget(index);
+            QComboBox* comboBox = static_cast<QComboBox*>(widget);
+            std::string IOType = comboBox->currentText().toStdString();
+
+            std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
+
+            int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
+
+            std::cout << IOName << " " << IOType << " " << bits << std::endl;
+        }
+    }
+
+
     std::map<DiagramItem*, int> states;
 
     int counter = 0;
@@ -410,26 +432,50 @@ void MainWindow::createToolBox()
             this, SLOT(backgroundButtonGroupClicked(QAbstractButton*)));
 
     QGridLayout *backgroundLayout = new QGridLayout;
-    backgroundLayout->addWidget(createBackgroundCellWidget(tr("Blue Grid"),
-                                                           ":/images/background1.png"), 0, 0);
-    backgroundLayout->addWidget(createBackgroundCellWidget(tr("White Grid"),
-                                                           ":/images/background2.png"), 0, 1);
-    backgroundLayout->addWidget(createBackgroundCellWidget(tr("Gray Grid"),
-                                                           ":/images/background3.png"), 1, 0);
-    backgroundLayout->addWidget(createBackgroundCellWidget(tr("No Grid"),
-                                                           ":/images/background4.png"), 1, 1);
 
-    backgroundLayout->setRowStretch(2, 10);
-    backgroundLayout->setColumnStretch(2, 10);
+    int numRows = 10;
+
+
+    module_name_input = new QLineEdit();
+    module_name_label = new QLabel(this);
+    input_output_table_label = new QLabel(this);
+    module_name_label->setText("Module Name : ");
+    input_output_table_label->setText("Inputs and Outputs : ");
+
+
+    inputs_output_table = new QTableWidget();
+
+    inputs_output_table->setRowCount(numRows);
+    inputs_output_table->setColumnCount(3);
+
+    for(int i = 0; i < numRows; i++){
+        QComboBox *comboBox = new QComboBox;
+
+        comboBox->addItem(tr("input"));
+        comboBox->addItem(tr("output"));
+
+        inputs_output_table->setIndexWidget(inputs_output_table->model()->index(i, 1), comboBox);
+
+    }
+
+    inputs_output_table->setHorizontalHeaderLabels(QStringList() << "Name" << "Type" << "Bits");
+
+    backgroundLayout->addWidget(module_name_label);
+
+    backgroundLayout->addWidget(module_name_input);
+
+    backgroundLayout->addWidget(input_output_table_label);
+
+    backgroundLayout->addWidget(inputs_output_table);
 
     QWidget *backgroundWidget = new QWidget;
     backgroundWidget->setLayout(backgroundLayout);
 
     toolBox = new QToolBox;
     toolBox->setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Ignored));
-    toolBox->setMinimumWidth(itemWidget->sizeHint().width());
-    toolBox->addItem(itemWidget, tr("Basic Flowchart Shapes"));
-    toolBox->addItem(backgroundWidget, tr("Backgrounds"));
+    toolBox->setMinimumWidth(300);
+    toolBox->addItem(itemWidget, tr("ASM Shapes"));
+    toolBox->addItem(backgroundWidget, tr("Inputs / Outputs"));
 }
 
 void MainWindow::createActions()
