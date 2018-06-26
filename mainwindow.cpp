@@ -210,7 +210,6 @@ void traverse(bool is_root, DiagramItem* item, Arrow* current_arrow, std::vector
 void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& states,
               std::vector<DiagramItem*> visited_items, std::vector<std::string>& errors){
 
-
     if (item->diagramType() == DiagramItem::DiagramType::Step){
         if(not is_root){
             return;
@@ -219,7 +218,7 @@ void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& s
 
     for(auto visited_item : visited_items){
         if(visited_item == item){
-            errors.push_back("found a loop without any states!");
+            errors.push_back("* Found a loop without any state boxes.");
             return;
         }
     }
@@ -230,14 +229,14 @@ void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& s
         if(item->diagramType() == DiagramItem::DiagramType::Io and
            last_item->diagramType() == DiagramItem::DiagramType::Io)
         {
-            errors.push_back("found conditional box after another conditional box");
+            errors.push_back("* Found conditional box after another conditional box.");
             return;
         }
 
         if(item->diagramType() == DiagramItem::DiagramType::Io and
            last_item->diagramType() == DiagramItem::DiagramType::Step)
         {
-            errors.push_back("found conditional box after a state box");
+            errors.push_back("* Found conditional box after a state box.");
             return;
         }
     }
@@ -249,6 +248,11 @@ void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& s
             std::string arrow_value;
             Arrow* last_arrow_piece;
             DiagramItem* arrowDest = findArrowDest(arrow, arrow_value, last_arrow_piece);
+
+            if(not arrowDest){
+                errors.push_back("* Found an arrow pointing nowhere.");
+                return;
+            }
 
             auto new_visited_states = visited_items;
 
@@ -281,11 +285,19 @@ void MainWindow::convert(){
         find_errors(true, state->first, states, std::vector<DiagramItem*>(), errors);
     }
 
+    std::string all_errors;
     for(auto error : errors){
-        std::cout << error << std::endl;
+        all_errors += (error + "\n");
     }
 
+    all_errors += "\n\n Please fix your errors and try again.";
+
     if(errors.size()){
+        QMessageBox::critical(
+            this,
+            "Error!",
+            QString::fromStdString(all_errors));
+
         return;
     }
 
@@ -304,22 +316,14 @@ void MainWindow::convert(){
     for(int i = 0; i < rowCount; i++){
         if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
 
-            auto index = inputs_output_table->model()->index(i, 1);
-            auto widget = inputs_output_table->indexWidget(index);
-            QComboBox* comboBox = static_cast<QComboBox*>(widget);
-            std::string IOType = comboBox->currentText().toStdString();
-
             std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
 
-            int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
-
-            if(!first){
-                std::cout << ", ";
+            if(first){
+                first = false;
+                output_file << ", ";
             }
 
-            std::cout << IOName;
-
-            first = false;
+            output_file << IOName;
         }
     }
 
@@ -338,18 +342,14 @@ void MainWindow::convert(){
             int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
 
             if(IOType == "input"){
-                std::cout << "input reg[" << bits << "] " << IOName << ";";
+                output_file << "input reg[" << bits << "] " << IOName << ";";
             } else {
-                std::cout << "ouput wire[" << bits << "] " << IOName << ";";
+                output_file << "ouput wire[" << bits << "] " << IOName << ";";
             }
 
-            std::cout << "\n";
+            output_file << "\n";
         }
     }
-
-
-
-
 
     std::vector<ASMBlock> asm_blocks;
 
@@ -373,8 +373,8 @@ void MainWindow::convert(){
 
     output_file << "end else" << endl;
     output_file << "case (state)" << endl;
-    for(auto asmBlock : asm_blocks)
-    {
+
+    for(auto asmBlock : asm_blocks){
         output_file <<  asmBlock.id << ":" << "begin" << endl;
 
         stringstream ss(asmBlock.default_code);
@@ -417,6 +417,7 @@ void MainWindow::convert(){
                         output_file << " && " ;
                 }
             }
+
             output_file << ") begin"<< endl;
 
             stringstream ss(conditionBox.code);
@@ -427,15 +428,17 @@ void MainWindow::convert(){
                 while(getline(ss , rt , '\n'))
                     output_file << "\t\t" << rt << ";" << endl;
             }
+
             output_file << "\tend" << endl;
         }
-    output_file << "end" << endl;
+
+        output_file << "end" << endl;
     }
 
     output_file << "endcase" << endl;
     output_file << "end" << endl;
     //seq. segment
-  ///////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////
 
     //nextState generator
@@ -484,7 +487,7 @@ void MainWindow::convert(){
             output_file << ")"<< endl;
             output_file << "\t\tstate <= " << stateBox.next_state_id << ";" << endl;
         }
-    output_file << "end" << endl;
+        output_file << "end" << endl;
     }
     output_file << "endcase" << endl;
     output_file << "end" << endl << endl;
@@ -675,6 +678,9 @@ void MainWindow::createToolBox()
 
 
     module_name_input = new QLineEdit();
+    module_name_input->setText("ASM");
+
+
     module_name_label = new QLabel(this);
     input_output_table_label = new QLabel(this);
     module_name_label->setText("Module Name : ");

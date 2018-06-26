@@ -222,6 +222,7 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             arrow->setZValue(-1000.0);
             addItem(arrow);
             arrow->updatePosition();
+
         } else if(startItems.count() > 0 && endItems.count() == 0 &&
                   startItems.first()->type() == DiagramItem::Type){
 
@@ -239,6 +240,8 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 pos.setX(startItem->pos().x());
             }
 
+            //
+
             DiagramItem *endItem = new DiagramItem(DiagramItem::DiagramType::Point, myItemMenu);
             endItem->setBrush(myItemColor);
             addItem(endItem);
@@ -252,14 +255,9 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             arrow->setZValue(-1000.0);
             addItem(arrow);
             arrow->updatePosition();
-
-
-
         }
-
-
-
     }
+
     line = 0;
     QGraphicsScene::mouseReleaseEvent(mouseEvent);
 }
