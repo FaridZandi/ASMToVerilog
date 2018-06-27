@@ -55,7 +55,6 @@ class QPainter;
 class QStyleOptionGraphicsItem;
 class QWidget;
 class QPolygonF;
-
 class Arrow;
 
 class DiagramItem : public QGraphicsPolygonItem

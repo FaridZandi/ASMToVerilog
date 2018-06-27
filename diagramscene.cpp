@@ -205,7 +205,6 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
             endItems.removeFirst();
         }
 
-
         removeItem(line);
         delete line;
 
@@ -240,13 +239,10 @@ void DiagramScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *mouseEvent)
                 pos.setX(startItem->pos().x());
             }
 
-            //
-
             DiagramItem *endItem = new DiagramItem(DiagramItem::DiagramType::Point, myItemMenu);
             endItem->setBrush(myItemColor);
             addItem(endItem);
             endItem->setPos(pos);
-
 
             Arrow *arrow = new Arrow(startItem, endItem);
             arrow->setColor(myLineColor);

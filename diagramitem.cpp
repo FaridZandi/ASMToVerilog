@@ -99,10 +99,12 @@ DiagramItem::DiagramItem(DiagramType diagramType, QMenu *contextMenu,
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
 }
 
-DiagramItem::~DiagramItem()
-{
+DiagramItem::~DiagramItem(){
     if(textItem){
-        scene()->removeItem(textItem);
+
+//        std::cout << scene() << std::endl;
+
+//        scene()->removeItem(textItem);
         delete textItem;
     }
 }
@@ -118,15 +120,32 @@ void DiagramItem::removeArrow(Arrow *arrow)
 void DiagramItem::removeArrows()
 {
     foreach (Arrow *arrow, arrows) {
+        if(arrow->startItem() == this){
+            arrow->startItem()->removeArrow(arrow);
+            arrow->endItem()->removeArrow(arrow);
+
+            if(scene()){
+                scene()->removeItem(arrow);
+            }
+
+            delete arrow;
+        }
+    }
+
+    foreach (Arrow *arrow, arrows) {
         arrow->startItem()->removeArrow(arrow);
         arrow->endItem()->removeArrow(arrow);
-        scene()->removeItem(arrow);
+
+        if(scene()){
+            scene()->removeItem(arrow);
+        }
+
         delete arrow;
     }
+
 }
 
-void DiagramItem::addArrow(Arrow *arrow)
-{
+void DiagramItem::addArrow(Arrow *arrow){
     arrows.append(arrow);
 }
 

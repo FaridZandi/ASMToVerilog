@@ -182,7 +182,11 @@ Arrow::~Arrow(){
         delete textItem;
     }
 
-//    if(endItem()->diagramType() == DiagramItem::DiagramType::Point){
-//        endItem()->scene()->removeItem(endItem());
-//    }
+    if(endItem()->diagramType() == DiagramItem::DiagramType::Point){
+        qgraphicsitem_cast<DiagramItem *>(endItem())->removeArrows();
+
+        endItem()->scene()->removeItem(endItem());
+
+//        delete endItem();
+    }
 }

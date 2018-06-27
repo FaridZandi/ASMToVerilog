@@ -266,7 +266,12 @@ void find_errors(bool is_root, DiagramItem* item, std::map<DiagramItem*, int>& s
 
 void MainWindow::convert(){
 
-    std::map<DiagramItem*, int> states;
+    //finding all the states
+
+    DiagramItem* topMostState = NULL;
+    int topMostStateY = 1000000;
+
+    std::map<DiagramItem *, int> states;
 
     int counter = 0;
     for(auto i : scene->items()){
@@ -275,9 +280,18 @@ void MainWindow::convert(){
             if(diagramItem->diagramType() == DiagramItem::DiagramType::Step){
                 states.insert(std::make_pair(diagramItem, counter));
                 counter ++;
+
+                if(diagramItem->pos().y() < topMostStateY){
+                    topMostState = diagramItem;
+                    topMostStateY = diagramItem->pos().y();
+                }
             }
         }
     }
+
+    int resetStateID = states[topMostState];
+
+    // checking for errors
 
     std::vector<std::string> errors;
 
@@ -295,7 +309,7 @@ void MainWindow::convert(){
     if(errors.size()){
         QMessageBox::critical(
             this,
-            "Error!",
+            "Error in ASM!",
             QString::fromStdString(all_errors));
 
         return;
@@ -344,7 +358,7 @@ void MainWindow::convert(){
             if(IOType == "input"){
                 output_file << "input reg[" << bits << "] " << IOName << ";";
             } else {
-                output_file << "ouput wire[" << bits << "] " << IOName << ";";
+                output_file << "output wire[" << bits << "] " << IOName << ";";
             }
 
             output_file << "\n";
@@ -362,14 +376,13 @@ void MainWindow::convert(){
     }
 
 
-
     //combo. segment
     /////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////
     output_file << "always @ (posedge clock)" << endl;
     output_file << "begin" << endl;
     output_file << "if (reset == 1'b1) begin" << endl;
-    output_file << "\t state <= 0;" << endl;
+    output_file << "\t state <= " << resetStateID << ";" << endl;
 
     output_file << "end else" << endl;
     output_file << "case (state)" << endl;
@@ -437,6 +450,7 @@ void MainWindow::convert(){
 
     output_file << "endcase" << endl;
     output_file << "end" << endl;
+
     //seq. segment
     //////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////
@@ -446,7 +460,7 @@ void MainWindow::convert(){
     output_file << "always @ (posedge clock)" << endl;
     output_file << "begin" << endl;
     output_file << "if (reset == 1'b1) begin" << endl;
-    output_file << "\t state <= 0;" << endl;
+    output_file << "\t state <= " << resetStateID << ";" << endl;
 
     output_file << "end else" << endl;
     output_file << "case (state)" << endl;
@@ -494,6 +508,8 @@ void MainWindow::convert(){
 
 
     output_file << "endmodule" << std::endl;
+
+    system(("xdg-open " + fileName).c_str());
 
 }
 
