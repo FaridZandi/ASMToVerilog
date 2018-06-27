@@ -128,10 +128,10 @@ DiagramItem* findArrowDest(Arrow* a, std::string& arrow_text, Arrow* &last_arrow
             arrow_text = currentArrow->textItem->toPlainText().toStdString();
         }
 
-        Arrow* nextArrow;
+        Arrow* nextArrow = NULL ;
 
         for(auto arrow : current->getArrows()){
-            if(arrow != currentArrow){
+            if(arrow->startItem() == current){
                 nextArrow = arrow;
                 break;
             }
@@ -144,6 +144,7 @@ DiagramItem* findArrowDest(Arrow* a, std::string& arrow_text, Arrow* &last_arrow
         currentArrow = nextArrow;
         last_arrow_piece = currentArrow;
     }
+
     return current;
 }
 
