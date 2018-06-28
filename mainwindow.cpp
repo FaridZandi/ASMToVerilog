@@ -9,7 +9,8 @@
 #include <fstream>
 #include <map>
 #include <sstream>
-#include <fstream>
+#include <set>
+#include <string>
 
 const int InsertTextButton = 10;
 
@@ -322,21 +323,27 @@ void MainWindow::convert(){
 
     std::ofstream output_file(fileName);
 
+    set<string> input_output_var;
+
+    set<string> middle_var;
+
     output_file << "module " << module_name_input->text().toStdString() << "(" ;
 
     int rowCount = inputs_output_table->rowCount();
 
-    bool first = true;
+    bool first = false;
 
     for(int i = 0; i < rowCount; i++){
         if(inputs_output_table->item(i, 0) and inputs_output_table->item(i, 2)){
 
             std::string IOName = inputs_output_table->item(i, 0)->text().toStdString();
 
+            input_output_var.insert(IOName);
+
             if(first){
-                first = false;
                 output_file << ", ";
             }
+            first = true;
 
             output_file << IOName;
         }
@@ -357,14 +364,22 @@ void MainWindow::convert(){
             int bits = std::stoi(inputs_output_table->item(i, 2)->text().toStdString());
 
             if(IOType == "input"){
-                output_file << "input reg[" << bits << "] " << IOName << ";";
+                if(bits > 1)
+                    output_file << "input reg[" << bits - 1 << ":0] " << IOName << ";";
+                else if(bits == 1)
+                    output_file << "input reg " << IOName << ";";
             } else {
-                output_file << "output wire[" << bits << "] " << IOName << ";";
+                if(bits > 1)
+                    output_file << "output wire[" << bits - 1 << ":0] " << IOName << ";";
+                else if (bits == 1)
+                    output_file << "output wire " << IOName << ";";
             }
 
             output_file << "\n";
         }
     }
+
+    output_file << "\n";
 
     std::vector<ASMBlock> asm_blocks;
 
@@ -376,10 +391,51 @@ void MainWindow::convert(){
         asm_blocks.push_back(asm_block);
     }
 
+    //declare middle variable
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    for(auto asmBlock : asm_blocks){
+        stringstream stateCode(asmBlock.default_code);
+        string rt;
+
+        if(asmBlock.default_code != "")
+        {
+            while(getline(stateCode , rt , '\n'))
+            {
+                string LHS = rt.substr(0 , rt.find("<=") - 1);
+                if(!(input_output_var.find(LHS) != input_output_var.end()))
+                    middle_var.insert(LHS);
+            }
+        }
+        for(auto conditionBox : asmBlock.conditional_codes){
+            stringstream condCode(conditionBox.code);
+            string rt;
+
+            if(conditionBox.code != "")
+            {
+                while(getline(condCode , rt , '\n'))
+                {
+                    string LHS = rt.substr(0 , rt.find("<=") - 1);
+                    if(!(input_output_var.find(LHS) != input_output_var.end()))
+                        middle_var.insert(LHS);
+                }
+            }
+        }
+
+    }
+
+    for(auto i : middle_var)
+    {
+        output_file << "integer " << i << ";" << endl;
+    }
+
+    output_file << "integer state;\n";
+    output_file << "\n" ;
 
     //combo. segment
-    /////////////////////////////////////////////////////////////////
-    ///////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
     output_file << "always @ (posedge clock)" << endl;
     output_file << "begin" << endl;
     output_file << "if (reset == 1'b1) begin" << endl;
@@ -476,7 +532,7 @@ void MainWindow::convert(){
             {
                 if(flag)
                 output_file << "\tif (";
-                else cout << "\telse if (";
+                else output_file << "\telse if (";
                 flag = false;
             }
 
@@ -541,6 +597,7 @@ void MainWindow::sendToBack()
         return;
 
     QGraphicsItem *selectedItem = scene->selectedItems().first();
+
     QList<QGraphicsItem *> overlapItems = selectedItem->collidingItems();
 
     qreal zValue = 0;
@@ -777,6 +834,16 @@ void MainWindow::createActions()
     exitAction->setStatusTip(tr("Quit Scenediagram example"));
     connect(exitAction, SIGNAL(triggered()), this, SLOT(close()));
 
+    saveAction = new QAction(tr("&Save") , this);
+    saveAction->setShortcut(tr("save file"));
+    saveAction->setStatusTip(tr("save ASM file"));
+    connect(saveAction , SIGNAL(triggered()) , this , SLOT(saveToFile()));
+
+    loadAction = new QAction(tr("&Load") , this);
+    loadAction->setShortcut(tr("load file"));
+    loadAction->setStatusTip(tr("load ASM file"));
+    connect(loadAction , SIGNAL(triggered()) , this , SLOT(loadFromFile()));
+
     boldAction = new QAction(tr("Bold"), this);
     boldAction->setCheckable(true);
     QPixmap pixmap(":/images/bold.png");
@@ -803,6 +870,8 @@ void MainWindow::createMenus()
 {
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(exitAction);
+    fileMenu->addAction(saveAction);
+    fileMenu->addAction(loadAction);
 
     itemMenu = menuBar()->addMenu(tr("&Item"));
     itemMenu->addAction(deleteAction);
@@ -992,4 +1061,51 @@ QIcon MainWindow::createColorIcon(QColor color)
     painter.fillRect(QRect(0, 0, 20, 20), color);
 
     return QIcon(pixmap);
+}
+
+void MainWindow::saveToFile(){
+    QString fileName = QFileDialog::getSaveFileName(this , tr("Save Address Book"), "",
+                                                    tr("Address Book (*.abk);;All Files (*)"));
+    if(fileName.isEmpty())
+        return;
+    else{
+        QFile file(fileName);
+        if(!file.open(QIODevice::WriteOnly)){
+            QMessageBox::information(this , tr("Unable to open file"), file.errorString());
+            return;
+        }
+        QDataStream out(&file);
+        out.setVersion(QDataStream::Qt_4_5);
+        for(auto i:scene->items()){
+            if(i->type() == DiagramItem::Type){
+                DiagramItem *diagramItem = qgraphicsitem_cast<DiagramItem *>(i);
+                out << diagramItem->type() << diagramItem->diagramType();
+            }
+            else if(i->type() == Arrow::Type)
+                cout << "Arrow" << endl;
+            else if(i->type() == DiagramTextItem::Type)
+                cout << "TextItem" << endl;
+        }
+    }
+}
+
+void MainWindow::loadFromFile(){
+    QString fileName = QFileDialog::getOpenFileName(this , tr("Open Address Book"), "",
+                                                    tr("Address Book (*.abk);;All Files (*)"));
+    if (fileName.isEmpty())
+            return;
+        else {
+
+            QFile file(fileName);
+
+            if (!file.open(QIODevice::ReadOnly)) {
+                QMessageBox::information(this, tr("Unable to open file"),
+                    file.errorString());
+                return;
+            }
+
+            QDataStream in(&file);
+            in.setVersion(QDataStream::Qt_4_5);
+
+        }
 }

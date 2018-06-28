@@ -107,6 +107,9 @@ private slots:
     void handleFontChange();
     void itemSelected(QGraphicsItem *item);
     void about();
+    void saveToFile();
+    void loadFromFile();
+
 
 private:
     void createToolBox();
@@ -136,7 +139,8 @@ private:
     QAction *enlargeShapeAction;
     QAction *shrinkShapeAction;
     QAction *convertAction;
-
+    QAction *saveAction;
+    QAction *loadAction;
     QAction *toFrontAction;
     QAction *sendBackAction;
     QAction *aboutAction;
