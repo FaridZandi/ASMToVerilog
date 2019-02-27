@@ -11,7 +11,7 @@ A QT-based graphical tool for converting ASMs to Verilog code.
 
 ## Generate the Code
 
-```
+```verilog
 module UselessASM(a, b);
 
 output wire[4:0] a;
